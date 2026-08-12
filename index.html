@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Player Profile & Inventory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Player Dashboard</h1>
+
+  <section id="player-section">
+    <h2>Player Info</h2>
+    <div id="player-output" class="box"></div>
+    <button id="show-player">Show Player Info</button>
+    <button id="add-gold">Add Gold</button>
+  </section>
+<section id="main-output">
+  <h2>What's Happening...</h2>
+
+  <div id="story-wrapper">
+    <img id="sceneImage" src="" alt="Scene" />
+    <div id="storyBox" class="box"></div>
+  </div>
+
+</section>
+
+  <section id="modeMode">
+    <h2 id="locationTitle"></h2>
+    <div id="mode-output">
+    </div>    
+    </section>
+  <section id="inventory-section">
+    <h2>Inventory</h2>
+    <div id="inventory-output" class="box"></div>
+
+    <button id="show-inventory">Show Inventory</button>
+    <button id="add-item">Add New Item</button>
+    <button id="increase-item">Increase Item Quantity</button>
+  </section>
+    <!-- --------------------------------Scripts-------------------------------------- -->
+    <!-- --------------------------------Scripts-------------------------------------- -->
+    <!-- --------------------------------Scripts-------------------------------------- -->
+    <!-- --------------------------------Scripts-------------------------------------- -->
+    <script>
+
+// Global Helpers
+    function $(el) {
+      return document.querySelector(el);
+    };
+// Object Helpers
+
+const toolBox= {
+  small: [ -1, 0, 1],
+  medium:[-3, -2, 0, 2, 3],
+  large:[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6],
+
+
+  world: {
+
+hitCrate(){
+  let hit = toolBox.combat.punch();
+
+  // subtract damage first
+  gameData.enemyArr[0].hp -= hit;
+
+  // if crate still alive
+  if (gameData.enemyArr[0].hp > 0){
+    toolBox.updateTool.storyAppend(
+      `You hit the box for ${hit} damage <br> Crate HP: ${gameData.enemyArr[0].hp}<br>`
+    );
+    return;
+  }
+
+  // crate breaks
+  toolBox.updateTool.storyAppend(
+    `You break the crate and find something inside as well as gained xp!`
+  );
+
+  toolBox.playerTool.gainXP(5);
+  toolBox.lootTool.findRandomItem();
+  toolBox.updateTool.updateSceneImage("images/AlleyEmpty.png");
+
+  // remove hit button
+  const hitBtn = document.getElementById("fightCrate");
+  if (hitBtn) hitBtn.remove();
+  const alleyBack = document.createElement("button");
+  alleyBack.id = "alleyBack";
+  alleyBack.innerText = "Return to Village";
+  modeOutput.appendChild(alleyBack);
+  alleyBack.addEventListener('click', () => {
+    changeMode("Village");
+  })
+  locationTitle.innerText = "Currently: Empty Alley";
+  gameState.world.crateBroken = true;
+}
+
+
+
+  },
+
+  randomTool: {
+
+    rollNumber(number){
+      return Math.floor(Math.random() * number);
+    },
+
+    chooseRandom(array){
+      return Math.floor(Math.random() * array.length);
+    },
+
+    randomItem(){
+      let pickedItem = gameData.itemList[toolBox.randomTool.chooseRandom()]; // remember to call toolBox first. then the sub"folder"
+      return pickedItem; //this will be an object as far as i can tell.
+    }
+  },
+
+  status: {
+
+   PoisonedState(){
+    // 
+    let isPosioned = true;
+    let posionCounter = 3
+
+    // 
+    function poisonDmg () {
+      posionCounter--;
+      if(isPosioned === true){
+        takeDamage(10);
+      }
+      if (posionCounter <= 0){
+        curePoisoning();
+      }
+      if (isPosioned === true){
+        player.poisonCheck = true;
+      }
+    };
+    //     
+    function curePoisoning(){
+        isPosioned = false;    
+        player.poisonCheck = false;
+      }
+
+    return {poisonDmg, curePoisoning}
+
+   },
+
+
+
+  },
+
+  playerTool: {
+
+  levelUp(){
+    gameState.player.xp -= gameState.player.maxXP;
+    gameState.player.level++;
+    gameState.player.maxXP = Math.floor(gameState.player.maxXP * 1.75);
+    toolBox.updateTool.playerStatUpdate();
+    toolBox.updateTool.storyAppend("<br>You Leveled Up!");
+  },
+
+  gainXP(amount){
+    gameState.player.xp += amount;
+    toolBox.updateTool.playerStatUpdate();
+    while(gameState.player.xp >= gameState.player.maxXP){
+      toolBox.playerTool.levelUp();
+    }
+  },
+
+
+
+
+
+  },
+
+  enemyTool: {
+
+    createInstance(template){
+      let clone = {...template};
+      clone.drops = [];
+            for (let drop in template.drops){
+              let newDrop = {...drop};
+              clone.drops.push(newDrop);
+      }
+      clone.currentHP = clone.maxHP;
+      clone.status = {poisoned: false};
+      clone.turnCounter = 0;
+      return clone;    
+    },
+
+
+  },
+
+  updateTool: {
+
+updateSceneImage(path) {
+  const img = document.getElementById("sceneImage");
+  img.src = path;
+},
+
+playerStatUpdate(){
+  playerOutput.innerHTML = `
+    Name: ${gameState.player.name}<br>
+    Level: ${gameState.player.level}<br>
+    XP: ${gameState.player.xp}/${gameState.player.maxXP}<br>
+    Health: ${gameState.player.health}<br>
+    Gold: ${gameState.player.gold}
+  `;
+},
+
+
+    playerInventoryUpdate(){
+      inventoryEntries = ''
+      gameState.player.inventory.forEach(item => {
+      inventoryEntries += `<br>${item.item} — Quantity: ${item.quantity}<br>${item.description}<br>` //this line may need updated least sure how to build this myself
+      })      
+    inventoryOutput.innerHTML = inventoryEntries
+    },
+
+    storyAppend(message){
+      storyBox.innerHTML += message;
+    },
+
+    storyNew(message){
+      storyBox.innerHTML = message;
+    },
+  },
+
+  combat: {
+
+    damageRoller(baseDamage, size){
+      let amount = baseDamage;
+
+      if (size === "small"){
+        let varSmall = toolBox.small[toolBox.randomTool.chooseRandom(toolBox.small)];
+        amount = amount + varSmall;
+      }
+      if (size === "medium"){
+        let varMedium = toolBox.medium[toolBox.randomTool.chooseRandom(toolBox.medium)];
+        amount = amount + varMedium;
+      }
+      if (size === "large"){
+        let varLarge = toolBox.large[toolBox.randomTool.chooseRandom(toolBox.large)];
+        amount = amount + varLarge;
+      }
+      return amount;     
+
+
+    },
+
+    punch(){
+      return toolBox.combat.damageRoller(5, "small");
+    }
+    
+
+
+  },
+
+  lootTool: {
+
+  findRandomItem (){
+      let randomItem = gameData.itemList[Math.floor(Math.random() * gameData.itemList.length)];
+      let clone = {...randomItem, quantity: 1};
+      gameState.player.inventory.push(clone);
+    toolBox.updateTool.playerInventoryUpdate();  
+    },
+
+
+
+    
+getDrop(enemy) {
+
+  let roll = Math.floor(Math.random() * 10);
+
+  for (let drop of gameData.enemyArr.drops) {
+    roll -= drop.chance;
+    if(roll < 0) {
+      return drop.item;
+    }
+  }
+}
+
+
+
+  },
+};
+
+    const playerOutput = $('#player-output');
+    const showPlayer = $('#show-player');
+    const addGold = $('#add-gold');
+    const inventoryOutput = $('#inventory-output');
+    const showInventory = $('#show-inventory');
+    const addItem = $('#add-item');
+    const increaseItem = $('#increase-item');
+    const fightOrc = $('#fightOrc');
+    const locationTitle = $('#locationTitle');
+    const modeOutput = $('#mode-output');
+    const storyBox = $('#storyBox');
+    
+    
+    
+    const gameState = {
+      mode: null,
+      currentEnemy: null,
+      player: {
+        name: "Kevin",
+        level: 1,
+        health: 100,
+        mana: 100,
+        xp: 0,
+        maxXP: 50,
+        gold: 0,
+        inventory: [],
+        class: null,
+        abilities: [
+          { ability: "Spark", description: "Do 5 damage.", manaCost: 10, cooldown: 10 }
+        ]
+      },
+
+      world: {
+
+      crateBroken: false,
+
+      },
+      story: []
+    };
+    
+    
+    const gameData = {
+      mode: ["Village", "Alley", "Home", "Shopping", "Crate Bashing", "Fight", "Training"],
+      enemyArr:  [
+        {
+          name: "Wooden Crate",
+          maxHP: 25,
+          type: "Crate",
+          drops: [
+            {item: "Apple",   description: "blah", rarity: "common", category: "consumable", chance: 4},
+            {item: "Slingshot",   description: "blah" , rarity: "uncommon", category: "ranged offensive weapon", chance: 1},
+            {item: "Water",   description: "blah", rarity: "common", category: "consumable", chance:  3},
+            {item: "Small Green Potion",   description: "blah", rarity: "common", category: "consumable", chance: 2},
+            
+          ]
+          
+          
+        },      
+        {
+          name: "Purple Orc",
+          maxHP: 25,
+          type: "Orc",
+          drops: [
+            { item: "Iron Shield", chance: 3 },
+            { item: "Water", chance: 5},
+            { item: "Rusty Helmet", chance: 2 }
+          ]
+        },
+        {
+          name: "Red Orc",
+          maxHP: 30,
+          type: "Orc",
+          drops: [
+            { item: "Small Green Potion", chance: 5 },
+            { item: "Apple", chance: 3 },
+            { item: "Rusty Dagger", chance: 2 }
+          ]
+        }
+        
+      ],
+      itemList: [
+        {item: "Small Green Potion", description: "blah", rarity: "common", category: "consumable",  },
+        {item: "Bronze Sword",   description: "blah" , rarity: "common", category: "melee offensive weapon" },
+        {item: "Silver Sword",   description: "blah" , rarity: "rare", category: "melee offensive weapnon" },
+        {item: "Gold Sword",   description: "blah" , rarity: "epic", category: "melee offensive weapon" },
+        {item: "Iron Shield",   description: "blah" , rarity: "uncommon", category: "defensive weapon"},
+        {item: "Bow and Arrow",   description: "blah", rarity: "rare", category: "ranged offensive weapon" },
+        {item: "Large Green Potion",   description: "blah", rarity: "rare", category: "consumable"},
+        {item: "Rusty Helmet",   description: "blah" , rarity: "common", category: "armor" },
+        {item: "Rusty Dagger",   description: "blah" , rarity: "common", category: "melee offensive weapon"},
+        {item: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
+        {item: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
+        {item: "Slingshot",   description: "blah" , rarity: "uncommon", category: "ranged offensive weapon"  },
+        {item: "Water",   description: "blah", rarity: "common", category: "consumable"  },
+      ],
+      storyText: {
+        intro: "Begin",
+        Battle: ["A Fight Has Started...", "You Exchange Blows", "You Took damage", "You Dealt Damage", "You won the battle", "You Fainted.", "You Found Some Items", "You lost some items"],
+        end: "The End."
+      },
+      
+    }
+    
+    function homeMode(){
+      toolBox.updateTool.updateSceneImage("images/home.png");
+      locationTitle.innerText = "Currently: Home";
+      storyBox.innerHTML = `You find yourself back at Home...<br>`;
+      modeOutput.innerHTML = `
+      <button id="home-exit">Exit</button>
+      <button id="home-rest">Sleep</button>
+      <button id="home-storage">Storage</button>
+      <button id="home-change">Change Apperance</button>      
+      `
+      const homeRest = $('#home-rest');
+      const homeExit = $('#home-exit');
+      const homeStorage = $('#home-storage');
+      const homeChange = $('#home-change');
+      homeRest.addEventListener('click', () => {
+        toolBox.updateTool.storyNew(`You take some time to recover and now you feel rested.<br>`);
+        gameState.player.health = 100;
+        toolBox.updateTool.playerStatUpdate();
+      })
+      homeExit.addEventListener('click', () => {
+        changeMode("Village");
+      });
+    }
+
+    function shopMode(){
+      toolBox.updateTool.updateSceneImage("images/shop.png");
+      toolBox.updateTool.storyAppend("You walk into the local shop.");
+      locationTitle.innerText = "Currently: Shop";
+      modeOutput.innerHTML = `
+      <button id="exitBtn">Exit</button>
+      <button id="talkBtn">Talk to shop attendant</button>
+      `
+      const exitBtn = $('#exitBtn');
+      const talkBtn = $('#talkBtn');
+      
+      exitBtn.addEventListener('click', () => {changeMode("Village");})
+      talkBtn.addEventListener('click', () => {
+        toolBox.updateTool.storyNew("<br>Shop Keep: Free XP today. The Dev has reasons, get it while it lasts...");
+        talkBtn.remove();
+        const btn = document.createElement('button');
+        btn.id = "freeBtn";
+        btn.innerText = "Free Xp";
+        modeOutput.appendChild(btn);
+        const freeBtn = $('#freeBtn');
+        freeBtn.addEventListener('click', () => {
+          toolBox.playerTool.gainXP(4);
+        })
+      })
+    }
+    
+    function villageMode(){
+      toolBox.updateTool.updateSceneImage("images/village.png");
+      storyBox.innerHTML = 'You stand in the townsquare...';
+      locationTitle.innerText = 'Currently: Village';
+      modeOutput.innerHTML = `
+      <button id="villToHome">Go Home</button>
+      <button id="villToAlley">Explore Alley</button>
+      <button id="villToShop">Shop</button>
+      <button id="villToExplore">Explore Outside of Town</button>
+      ` 
+      const villToAlley = $('#villToAlley');
+      const villToShop = $('#villToShop');
+      const villToHome = $('#villToHome');
+      const villToExplore = $('#villToExplore');
+
+      villToShop.addEventListener('click', () => {
+        changeMode('Shop');
+      })
+
+      villToAlley.addEventListener('click', () => {
+        changeMode("Alley");
+      })
+
+      villToHome.addEventListener('click', () => {
+        changeMode("Home");
+      });
+
+    }
+
+    function alleyMode(){
+      if (gameState.world.crateBroken) {
+    toolBox.updateTool.updateSceneImage("images/AlleyEmpty.png");
+    toolBox.updateTool.storyNew("The crate is gone.");
+    modeOutput.innerHTML = `
+        <button id="alley-back">Return to Village</button>
+    `
+    const alleyBack = $('#alley-back');
+    alleyBack.addEventListener('click', () => {
+      changeMode("Village");
+    })
+    ;
+    return;
+}
+
+      toolBox.updateTool.updateSceneImage("images/Alley.png");
+
+  // YOU write this part
+  toolBox.updateTool.storyNew(`You walk into the nearest alley. You Find a Crate.<br>`);
+
+  modeOutput.innerHTML = `
+    <button id="alley-back">Return to Village</button>
+    <button id="alley-move">Approach the crate</button>
+  `;
+  const closerCrate = $('#alley-move');
+  const alleyBack = document.getElementById("alley-back");
+  alleyBack.addEventListener('click', () => {
+    changeMode("Village");
+  });
+
+  closerCrate.addEventListener('click', () => {
+    toolBox.updateTool.updateSceneImage("images/AlleyCloser.png")
+    alleyBack.remove();
+    modeOutput.innerHTML = `
+    <button id=fightCrate>Hit Crate</button>
+    `
+    const hitCrate = $('#fightCrate');
+    gameData.enemyArr[0].hp = gameData.enemyArr[0].maxHP;
+    hitCrate.addEventListener('click', () => {
+      toolBox.world.hitCrate();
+    })
+
+  });
+
+      
+    }
+
+   function changeMode(mode) {
+  gameState.mode = mode;
+  clearUI();
+  toolBox.updateTool.playerStatUpdate();
+
+  if (mode === "Home") homeMode();
+  if (mode === "Explore") exploreMode();
+  if (mode === "Scavenge") scavengeMode();
+  if (mode === "Combat") combatMode();
+  if (mode === "Village") villageMode();
+  if (mode === "Alley") alleyMode();
+  if (mode === "Shop") shopMode();
+}
+
+function clearUI(){
+  storyBox.innerText = '';
+}
+
+changeMode("Alley");
+
+</script>
+
+</body>
+</html>

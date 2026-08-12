@@ -1,0 +1,55 @@
+body {
+  background: #111;
+  color: #0f0;
+  font-family: Consolas, monospace;
+  padding: 20px;
+}
+
+h1, h2 {
+  color: #0f0;
+  margin-bottom: 10px;
+}
+
+section {
+  margin-bottom: 30px;
+}
+
+.box {
+  border: 1px solid #0f0;
+  padding: 10px;
+  min-height: 60px;
+  margin-bottom: 10px;
+}
+
+button {
+  background: black;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 8px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0f0;
+  color: black;
+}
+
+#story-wrapper {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+#sceneImage {
+  width: 300px;       /* adjust as needed */
+  height: 300px;      /* or auto */
+  object-fit: cover;  /* keeps your art looking good */
+  border: 1px solid #0f0;
+}
+
+#storyBox {
+  width: 50%;
+  min-height: 280px;
+
+}
