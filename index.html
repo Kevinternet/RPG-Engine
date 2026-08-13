@@ -377,8 +377,8 @@ getDrop(enemy) {
         {item: "Rusty Dagger",   description: "blah" , rarity: "common", category: "melee offensive weapon"},
         {item: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
         {item: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
-        {item: "Slingshot",   description: "blah" , rarity: "uncommon", category: "ranged offensive weapon"  },
-        {item: "Water",   description: "blah", rarity: "common", category: "consumable"  },
+        {item: "Slingshot",   description: "A stater weapon" , rarity: "uncommon", category: "ranged offensive weapon"  },
+        {item: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  },
       ],
       storyText: {
         intro: "Begin",
@@ -437,6 +437,22 @@ getDrop(enemy) {
         })
       })
     }
+
+    function exploreMode(){
+      toolBox.updateTool.updateSceneImage("images/explore.jpg");
+      toolBox.updateTool.storyNew(`You step outside town.<br> A forest is to your right and a path leads forward.<br> A field sits to your left.<br>`);
+      locationTitle.innerText = "Currently: Just Outside of Town";
+      modeOutput.innerHTML = `
+      <button id="returnVill">Return to Village</button>
+      <button id="walkPath">Walk the Path</button>
+      <button id="walkForest">Walk into the Forest</button>
+      <button id="walkField">Walk into the Field</button>
+      `;
+      const returnToVill = $('#returnVill');
+      returnToVill.addEventListener('click', () => {
+        changeMode("Village");
+      })
+    }
     
     function villageMode(){
       toolBox.updateTool.updateSceneImage("images/village.png");
@@ -463,6 +479,10 @@ getDrop(enemy) {
 
       villToHome.addEventListener('click', () => {
         changeMode("Home");
+      });
+
+      villToExplore.addEventListener('click', () => {
+        changeMode("Explore")
       });
 
     }
@@ -532,7 +552,7 @@ function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Alley");
+changeMode("Explore");
 
 </script>
 
