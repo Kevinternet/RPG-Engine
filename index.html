@@ -482,6 +482,22 @@ getDrop(enemy) {
       walkForest.addEventListener('click', () => {
         changeMode("Forest");
       })
+      const walkField = $('#walkField');
+      walkField.addEventListener('click', () => {
+        changeMode("Field");
+      })
+    }
+
+    function fieldMode(){
+      toolBox.updateTool.updateSceneImage("images/Field.jpg");
+      toolBox.updateTool.storyNew(`You walk into the nearby field.`);
+      locationTitle.innerText = "Location: Field"
+      modeOutput.innerHTML = `
+      
+      
+      
+      `;
+
     }
  
     function forestMode(){
@@ -606,13 +622,14 @@ getDrop(enemy) {
   if (mode === "Alley") alleyMode();
   if (mode === "Shop") shopMode();
   if (mode === "Forest") forestMode();
+  if (mode === "Field") fieldMode();
 }
 
 function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Forest");
+changeMode("Field");
 
 </script>
 
