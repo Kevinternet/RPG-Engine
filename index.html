@@ -193,6 +193,30 @@ hitCrate(){
 
   updateTool: {
 
+addToInventory(item, amount, itemNumber){
+
+  let found = false
+
+  for (const items of gameState.player.inventory){
+    console.log("Checking:", items.name, items.item);
+    if (items.name === item){
+      items.quantity = items.quantity + amount;
+      found = true;
+      break;
+    }
+  }
+  
+  if (found === false){
+    let specificItem = gameData.itemList[itemNumber];
+    let clone = {...specificItem, quantity: amount};
+    gameState.player.inventory.push(clone);
+  }
+
+  toolBox.updateTool.playerInventoryUpdate();
+
+  
+},
+
 updateSceneImage(path) {
   const img = document.getElementById("sceneImage");
   img.src = path;
@@ -210,9 +234,9 @@ playerStatUpdate(){
 
 
     playerInventoryUpdate(){
-      inventoryEntries = ''
+      let inventoryEntries = ''
       gameState.player.inventory.forEach(item => {
-      inventoryEntries += `<br>${item.item} — Quantity: ${item.quantity}<br>${item.description}<br>` //this line may need updated least sure how to build this myself
+      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity}<br>` //this line may need updated least sure how to build this myself
       })      
     inventoryOutput.innerHTML = inventoryEntries
     },
@@ -321,6 +345,8 @@ getDrop(enemy) {
 
       crateBroken: false,
 
+      treeShaken: false,
+
       },
       story: []
     };
@@ -334,10 +360,10 @@ getDrop(enemy) {
           maxHP: 25,
           type: "Crate",
           drops: [
-            {item: "Apple",   description: "blah", rarity: "common", category: "consumable", chance: 4},
-            {item: "Slingshot",   description: "blah" , rarity: "uncommon", category: "ranged offensive weapon", chance: 1},
-            {item: "Water",   description: "blah", rarity: "common", category: "consumable", chance:  3},
-            {item: "Small Green Potion",   description: "blah", rarity: "common", category: "consumable", chance: 2},
+            {name: "Apple",   description: "blah", rarity: "common", category: "consumable", chance: 4},
+            {name: "Slingshot",   description: "blah" , rarity: "uncommon", category: "ranged offensive weapon", chance: 1},
+            {name: "Water",   description: "blah", rarity: "common", category: "consumable", chance:  3},
+            {name: "Small Green Potion",   description: "blah", rarity: "common", category: "consumable", chance: 2},
             
           ]
           
@@ -348,9 +374,9 @@ getDrop(enemy) {
           maxHP: 25,
           type: "Orc",
           drops: [
-            { item: "Iron Shield", chance: 3 },
-            { item: "Water", chance: 5},
-            { item: "Rusty Helmet", chance: 2 }
+            { name: "Iron Shield", chance: 3 },
+            { name: "Water", chance: 5},
+            { name: "Rusty Helmet", chance: 2 }
           ]
         },
         {
@@ -358,27 +384,27 @@ getDrop(enemy) {
           maxHP: 30,
           type: "Orc",
           drops: [
-            { item: "Small Green Potion", chance: 5 },
-            { item: "Apple", chance: 3 },
-            { item: "Rusty Dagger", chance: 2 }
+            { name: "Small Green Potion", chance: 5 },
+            { name: "Apple", chance: 3 },
+            { name: "Rusty Dagger", chance: 2 }
           ]
         }
         
       ],
       itemList: [
-        {item: "Small Green Potion", description: "blah", rarity: "common", category: "consumable",  },
-        {item: "Bronze Sword",   description: "blah" , rarity: "common", category: "melee offensive weapon" },
-        {item: "Silver Sword",   description: "blah" , rarity: "rare", category: "melee offensive weapnon" },
-        {item: "Gold Sword",   description: "blah" , rarity: "epic", category: "melee offensive weapon" },
-        {item: "Iron Shield",   description: "blah" , rarity: "uncommon", category: "defensive weapon"},
-        {item: "Bow and Arrow",   description: "blah", rarity: "rare", category: "ranged offensive weapon" },
-        {item: "Large Green Potion",   description: "blah", rarity: "rare", category: "consumable"},
-        {item: "Rusty Helmet",   description: "blah" , rarity: "common", category: "armor" },
-        {item: "Rusty Dagger",   description: "blah" , rarity: "common", category: "melee offensive weapon"},
-        {item: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
-        {item: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
-        {item: "Slingshot",   description: "A stater weapon" , rarity: "uncommon", category: "ranged offensive weapon"  },
-        {item: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  },
+        {name: "Small Green Potion", description: "blah", rarity: "common", category: "consumable",  },
+        {name: "Bronze Sword",   description: "blah" , rarity: "common", category: "melee offensive weapon" },
+        {name: "Silver Sword",   description: "blah" , rarity: "rare", category: "melee offensive weapnon" },
+        {name: "Gold Sword",   description: "blah" , rarity: "epic", category: "melee offensive weapon" },
+        {name: "Iron Shield",   description: "blah" , rarity: "uncommon", category: "defensive weapon"},
+        {name: "Bow and Arrow",   description: "blah", rarity: "rare", category: "ranged offensive weapon" },
+        {name: "Large Green Potion",   description: "blah", rarity: "rare", category: "consumable"},
+        {name: "Rusty Helmet",   description: "blah" , rarity: "common", category: "armor" },
+        {name: "Rusty Dagger",   description: "blah" , rarity: "common", category: "melee offensive weapon"},
+        {name: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
+        {name: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
+        {name: "Slingshot",   description: "A stater weapon" , rarity: "uncommon", category: "ranged offensive weapon"  },
+        {name: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  },
       ],
       storyText: {
         intro: "Begin",
@@ -452,8 +478,41 @@ getDrop(enemy) {
       returnToVill.addEventListener('click', () => {
         changeMode("Village");
       })
+      const walkForest = $('#walkForest');
+      walkForest.addEventListener('click', () => {
+        changeMode("Forest");
+      })
     }
-    
+ 
+    function forestMode(){
+      toolBox.updateTool.updateSceneImage("images/forest.jpg");
+      toolBox.updateTool.storyNew(`You walk into the forest and notice an apple tree nearby.<br>`)
+      locationTitle.innerText = "Currently: Forest";
+      modeOutput.innerHTML = `
+      <button id="returnExplore">Return</button>
+      <button id="shakeTree">Shake Tree</button>
+      `;
+      const returnExplore = $('#returnExplore');
+      returnExplore.addEventListener('click', () => {
+        changeMode("Explore");
+      })
+      const shakeTree = $('#shakeTree');
+     
+      shakeTree.addEventListener('click', () => {
+         if (gameState.world.treeShaken === false) {
+        toolBox.updateTool.storyAppend(`You shake the tree and 3 apples fall from it.<br> You pick them up.<br>`)
+        toolBox.updateTool.addToInventory("Apple", 3, 10);
+        gameState.world.treeShaken = true;
+      }
+
+        else {
+          toolBox.updateTool.storyAppend(`you find shaking the tree does nothing for now...`)
+        }
+      })
+    }
+
+  
+
     function villageMode(){
       toolBox.updateTool.updateSceneImage("images/village.png");
       storyBox.innerHTML = 'You stand in the townsquare...';
@@ -546,13 +605,14 @@ getDrop(enemy) {
   if (mode === "Village") villageMode();
   if (mode === "Alley") alleyMode();
   if (mode === "Shop") shopMode();
+  if (mode === "Forest") forestMode();
 }
 
 function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Explore");
+changeMode("Forest");
 
 </script>
 
