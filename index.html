@@ -228,7 +228,7 @@ playerStatUpdate(){
     Level: ${gameState.player.level}<br>
     XP: ${gameState.player.xp}/${gameState.player.maxXP}<br>
     Health: ${gameState.player.health}<br>
-    Gold: ${gameState.player.gold}
+    Gold: ${gameState.player.gold}g
   `;
 },
 
@@ -346,6 +346,8 @@ getDrop(enemy) {
       crateBroken: false,
 
       treeShaken: false,
+
+      ratFought: false
 
       },
       story: []
@@ -491,14 +493,38 @@ getDrop(enemy) {
     function fieldMode(){
       toolBox.updateTool.updateSceneImage("images/Field.jpg");
       toolBox.updateTool.storyNew(`You walk into the nearby field.`);
+      if (gameState.world.ratFought === false){
       locationTitle.innerText = "Location: Field"
       modeOutput.innerHTML = `
-      
-      
-      
+      <button id="returnExplore">Return</button>
+      <button id="stayField">Stay</button>
       `;
+      const stayField = $('#stayField');
+      stayField.addEventListener('click', () => {
+        changeMode("Alert");
+        
+        setTimeout(() => {
+          ratEncounter();
+        }, 3000);
+
+      })
+      }
+
+
 
     }
+
+    function alertMode(){
+      toolBox.updateTool.updateSceneImage("images/Alert.jpg");
+      toolBox.updateTool.storyNew(`Something approaches you quickly from the grass...`)
+      modeOutput.innerHTML = ``;
+    }
+
+    function ratEncounter(){
+      toolBox.updateTool.updateSceneImage("images/Rat.png");
+      toolBox.updateTool.storyNew(`A rat has scurried up to you and it seems aggresive. ready to fight?`)
+      
+    };
  
     function forestMode(){
       toolBox.updateTool.updateSceneImage("images/forest.jpg");
@@ -623,6 +649,7 @@ getDrop(enemy) {
   if (mode === "Shop") shopMode();
   if (mode === "Forest") forestMode();
   if (mode === "Field") fieldMode();
+  if (mode === "Alert") alertMode();
 }
 
 function clearUI(){
