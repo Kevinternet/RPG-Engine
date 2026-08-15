@@ -62,12 +62,12 @@ hitCrate(){
   let hit = toolBox.combat.punch();
 
   // subtract damage first
-  gameData.enemyArr[0].hp -= hit;
+  gameData.enemyArr[0].maxHP -= hit;
 
   // if crate still alive
-  if (gameData.enemyArr[0].hp > 0){
+  if (gameData.enemyArr[0].maxHP > 0){
     toolBox.updateTool.storyAppend(
-      `You hit the box for ${hit} damage <br> Crate HP: ${gameData.enemyArr[0].hp}<br>`
+      `You hit the box for ${hit} damage <br> Crate HP: ${gameData.enemyArr[0].maxHP}<br>`
     );
     return;
   }
@@ -93,6 +93,45 @@ hitCrate(){
   })
   locationTitle.innerText = "Currently: Empty Alley";
   gameState.world.crateBroken = true;
+},
+
+hitRat(){
+  
+  if (gameState.world.ratFought || !gameState.currentEnemy || gameState.currentEnemy.currentHP <= 0) {
+    return;
+  }
+
+  let hit = toolBox.combat.punch();
+  let dmg = gameState.currentEnemy.attack;
+  gameState.currentEnemy.currentHP -= hit;
+
+  if (gameState.currentEnemy.currentHP > 0){
+    toolBox.updateTool.storyAppend(
+      `You hit the rat for ${hit} damage <br> Rat HP: ${gameState.currentEnemy.currentHP}<br>`
+    );
+    gameState.player.health -= dmg;
+    toolBox.updateTool.storyAppend(
+      `The rat attacks you for ${dmg} damage <br>`
+    );
+    toolBox.updateTool.playerStatUpdate();
+
+    return;
+  }
+
+  gameState.currentEnemy.currentHP = 0;
+  toolBox.updateTool.storyNew(
+    `You defeated the rat and gained xp!`
+  );
+
+  toolBox.playerTool.gainXP(gameState.currentEnemy.xpReward);
+  toolBox.playerTool.gainGold(gameState.currentEnemy.goldReward);
+  reward = toolBox.lootTool.getDrop(gameState.currentEnemy);
+  toolBox.updateTool.addToInventory(reward.name, 1, reward.number);
+  gameState.world.ratFought = true;
+  setTimeout(() => {
+    changeMode("Field");
+  }, 4500);
+
 }
 
 
@@ -168,20 +207,19 @@ hitCrate(){
   },
 
 
-
-
-
+  gainGold(amount){
+    gameState.player.gold += amount;
+    toolBox.updateTool.playerStatUpdate();
   },
-
+},
+  
   enemyTool: {
 
     createInstance(template){
       let clone = {...template};
-      clone.drops = [];
-            for (let drop in template.drops){
-              let newDrop = {...drop};
-              clone.drops.push(newDrop);
-      }
+      clone.drops = Array.isArray(template.drops)
+        ? template.drops.map(drop => ({ ...drop }))
+        : [];
       clone.currentHP = clone.maxHP;
       clone.status = {poisoned: false};
       clone.turnCounter = 0;
@@ -192,6 +230,16 @@ hitCrate(){
   },
 
   updateTool: {
+
+useItem(itemName){
+  const item = gameState.player.inventory.find(i => i.name === itemName);
+  if (item && item.quantity > 0) {
+    item.quantity--;
+    if (item.quantity === 0) {
+      gameState.player.inventory = gameState.player.inventory.filter(i => i.name !== itemName);
+    }
+  }
+},
 
 addToInventory(item, amount, itemNumber){
 
@@ -237,7 +285,7 @@ playerStatUpdate(){
     playerInventoryUpdate(){
       let inventoryEntries = ''
       gameState.player.inventory.forEach(item => {
-      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity}<br>` //this line may need updated least sure how to build this myself
+      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity} <button onclick="toolBox.updateTool.useItem('${item.name}')">Use</button><br>` //this line may need updated least sure how to build this myself
       })      
     inventoryOutput.innerHTML = inventoryEntries
     },
@@ -297,10 +345,10 @@ getDrop(enemy) {
 
   let roll = Math.floor(Math.random() * 10);
 
-  for (let drop of gameData.enemyArr.drops) {
+  for (let drop of enemy.drops) {
     roll -= drop.chance;
-    if(roll < 0) {
-      return drop.item;
+    if (roll < 0) {
+      return drop;
     }
   }
 }
@@ -308,8 +356,7 @@ getDrop(enemy) {
 
 
   },
-};
-
+}
     const playerOutput = $('#player-output');
     const showPlayer = $('#show-player');
     const addGold = $('#add-gold');
@@ -331,11 +378,16 @@ getDrop(enemy) {
         name: "Kevin",
         level: 1,
         health: 100,
-        mana: 100,
+        mana: 25,
+        defense: 0,
+        attack: 0,
         xp: 0,
         maxXP: 50,
         weapon: "nothing",
+        activeCombat: false,
+        playerTurn: true,
         gold: 0,
+        playerDeath: false,
         inventory: [],
         class: null,
         abilities: [
@@ -380,13 +432,14 @@ getDrop(enemy) {
           defense: 0,
           attack: 5,
           drops: [
-            { name: "Small Green Potion", chance: 5 },
-            { name: "Apple", chance: 3 },
-            { name: "Rusty Dagger", chance: 2 }
+            { name: "Small Green Potion", chance: 5, number: 0 },
+            { name: "Apple", chance: 3, number: 10 },
+            { name: "Rusty Dagger", chance: 2, number: 8}
           ],
           xpReward: 20,
           deathMessage: "The rat squeaks and scurries away.",
-          behavior: "Aggressive"
+          behavior: "Aggressive",
+          goldReward: 5
         },
         {
           name: "Purple Orc",
@@ -401,7 +454,8 @@ getDrop(enemy) {
           ],
           xpReward: 50,
           deathMessage: "The orc falls to the ground with a thud.",
-          behavior: "Defensive"
+          behavior: "Defensive",
+          goldReward: 25
         },
         {
           name: "Red Orc",
@@ -416,24 +470,26 @@ getDrop(enemy) {
           ],
           xpReward: 50,
           deathMessage: "The orc falls to the ground with a thud.",
-          behavior: "Aggressive"
+          behavior: "Aggressive",
+          goldReward: 30
         }
         
       ],
       itemList: [
-        {name: "Small Green Potion", description: "blah", rarity: "common", category: "consumable",  },
-        {name: "Bronze Sword",   description: "blah" , rarity: "common", category: "melee offensive weapon" },
-        {name: "Silver Sword",   description: "blah" , rarity: "rare", category: "melee offensive weapnon" },
-        {name: "Gold Sword",   description: "blah" , rarity: "epic", category: "melee offensive weapon" },
-        {name: "Iron Shield",   description: "blah" , rarity: "uncommon", category: "defensive weapon"},
-        {name: "Bow and Arrow",   description: "blah", rarity: "rare", category: "ranged offensive weapon" },
-        {name: "Large Green Potion",   description: "blah", rarity: "rare", category: "consumable"},
-        {name: "Rusty Helmet",   description: "blah" , rarity: "common", category: "armor" },
-        {name: "Rusty Dagger",   description: "blah" , rarity: "common", category: "melee offensive weapon"},
-        {name: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
-        {name: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
-        {name: "Slingshot",   description: "A stater weapon" , rarity: "uncommon", category: "ranged offensive weapon"  },
-        {name: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  }, 
+        {name: "Small Green Potion", description: "Heals a small amount of HP", rarity: "common", category: "consumable", index: 0, effect: "heal", value: 15 },
+        {name: "Bronze Sword",   description: "a basic sword made of bronze" , rarity: "common", category: "weapon", index: 1, effect: "damage", value: 10 },
+        {name: "Silver Sword",   description: "a sword made of silver" , rarity: "rare", category: "weapon", index: 2, effect: "damage", value: 15 },
+        {name: "Gold Sword",   description: "a sword made of gold" , rarity: "epic", category: "weapon", index: 3, effect: "damage", value: 20 },
+        {name: "Iron Shield",   description: "a shield made of iron" , rarity: "uncommon", category: "weapon", index: 4, effect: "defense", value: 5 },
+        {name: "Bow and Arrow",   description: "a ranged weapon" , rarity: "rare", category: "weapon", index: 5, effect: "damage", value: 10 },
+        {name: "Large Green Potion",   description: "Heals a large amount of HP", rarity: "rare", category: "consumable", index: 6, effect: "heal", value: 35 },
+        {name: "Rusty Helmet",   description: "a helmet made of rusted metal" , rarity: "common", category: "armor", index: 7, effect: "defense", value: 3 },
+        {name: "Rusty Dagger",   description: "a dagger made of rusted metal" , rarity: "common", category: "weapon", index: 8, effect: "damage", value: 5 },
+        {name: "Mystic Dagger",   description: "a mystical dagger" , rarity: "mythic", category: "weapon", index: 9, effect: "damage", value: 25 },
+        {name: "Apple",   description: "a red, juicy apple" , rarity: "common", category: "consumable", index: 10, effect: "heal", value: 10 },
+        {name: "Slingshot",   description: "A simple slingshot" , rarity: "uncommon", category: "weapon", index: 11, effect: "damage", value: 5 },
+        {name: "Water",   description: "A bottle of clean water" , rarity: "common", category: "consumable", index: 12, effect: "heal", value: 5  }, 
+        {name: "breastplate",   description: "A sturdy breastplate" , rarity: "rare", category: "armor", index: 13, effect: "defense", value: 5},
       ],
       storyText: {
         intro: "Begin",
@@ -540,6 +596,21 @@ getDrop(enemy) {
 
       })
       }
+      if (gameState.world.ratFought === true) {
+        locationTitle.innerText = "Location: Field"
+        modeOutput.innerHTML = `
+        <button id="returnExplore">Return</button>
+        <button id="stayField">Stay</button>
+        `;
+        const returnExplore = $('#returnExplore');
+        returnExplore.addEventListener('click', () => {
+          changeMode("Explore");
+        });
+        const stayField = $('#stayField');
+        stayField.addEventListener('click', () => {
+          toolBox.updateTool.storyNew(`You stay in the field and nothing happens...`);
+        })
+      }
 
 
 
@@ -553,21 +624,36 @@ getDrop(enemy) {
 
     function ratEncounter(){
       toolBox.updateTool.updateSceneImage("./images/Rat.png");
-      toolBox.updateTool.storyNew(`A rat has scurried up to you and it seems aggresive. ready to fight?`)
-    };
-    modeOutput.innerHTML = `
-    <button id="fightRat">Fight</button>
-    <button id="runRat">Run</button>
-    `;
-    console.log("Rat Encounter Triggered");
-    const fightRat = $('#fightRat');
-    const runRat = $('#runRat');
-    fightRat.addEventListener('click', () => {
-      gameState.currentEnemy = toolBox.enemyTool.createInstance(gameData.enemyArr[1]);
-      toolBox.updateTool.storyNew(`You engage the rat in combat!`);
-      toolBox.updateTool.storyAppend(`<br>Rat HP: ${gameState.currentEnemy.hp}`);
+      toolBox.updateTool.storyNew(`A rat has scurried up to you and it seems aggresive. ready to fight?`);
+      modeOutput.innerHTML = `
+      <button id="fightRat">Fight</button>
+      <button id="runRat">Run</button>
+      `;
+      const runRat = $('#runRat');
+      const fightRat = $('#fightRat');
+      runRat.addEventListener('click', () => {
+        changeMode("Field");
+      })
+      fightRat.addEventListener('click', () => {
+        toolBox.updateTool.storyNew(`You prepare to fight the rat!`);
+        toolBox.updateTool.storyAppend(`<br>Rat HP: ${gameData.enemyArr[1].maxHP}<br>`);
+        gameState.currentEnemy = toolBox.enemyTool.createInstance(gameData.enemyArr[1]);
+        modeOutput.innerHTML = `
+        <button id="attackRat">Attack</button>
+        <button id="runRat">Run</button>
+        `;
+        const attackRat = $('#attackRat');
+        const runRat = $('#runRat');
+        attackRat.addEventListener('click', () => {
+          toolBox.world.hitRat();
+        })
+        runRat.addEventListener('click', () => {
+          changeMode("Field");
+        })
+      })
       
-    })
+      
+    };
  
     function forestMode(){
       toolBox.updateTool.updateSceneImage("images/forest.jpg");
@@ -668,7 +754,7 @@ getDrop(enemy) {
     <button id=fightCrate>Hit Crate</button>
     `
     const hitCrate = $('#fightCrate');
-    gameData.enemyArr[0].hp = gameData.enemyArr[0].maxHP;
+    gameData.enemyArr[0].maxHP = gameData.enemyArr[0].maxHP;
     hitCrate.addEventListener('click', () => {
       toolBox.world.hitCrate();
     })
