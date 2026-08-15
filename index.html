@@ -226,6 +226,7 @@ playerStatUpdate(){
   playerOutput.innerHTML = `
     Name: ${gameState.player.name}<br>
     Level: ${gameState.player.level}<br>
+    weapon: ${gameState.player.weapon}<br>
     XP: ${gameState.player.xp}/${gameState.player.maxXP}<br>
     Health: ${gameState.player.health}<br>
     Gold: ${gameState.player.gold}g
@@ -333,6 +334,7 @@ getDrop(enemy) {
         mana: 100,
         xp: 0,
         maxXP: 50,
+        weapon: "nothing",
         gold: 0,
         inventory: [],
         class: null,
@@ -370,26 +372,51 @@ getDrop(enemy) {
           ]
           
           
-        },      
+        }, 
         {
-          name: "Purple Orc",
-          maxHP: 25,
-          type: "Orc",
-          drops: [
-            { name: "Iron Shield", chance: 3 },
-            { name: "Water", chance: 5},
-            { name: "Rusty Helmet", chance: 2 }
-          ]
-        },
-        {
-          name: "Red Orc",
-          maxHP: 30,
-          type: "Orc",
+          name: "Rat",
+          maxHP: 20,
+          type: "Rat",
+          defense: 0,
+          attack: 5,
           drops: [
             { name: "Small Green Potion", chance: 5 },
             { name: "Apple", chance: 3 },
             { name: "Rusty Dagger", chance: 2 }
-          ]
+          ],
+          xpReward: 20,
+          deathMessage: "The rat squeaks and scurries away.",
+          behavior: "Aggressive"
+        },
+        {
+          name: "Purple Orc",
+          maxHP: 50,
+          type: "Orc",
+          defense: 5,
+          attack: 15,
+          drops: [
+            { name: "Iron Shield", chance: 3 },
+            { name: "Water", chance: 5},
+            { name: "Rusty Helmet", chance: 2 }
+          ],
+          xpReward: 50,
+          deathMessage: "The orc falls to the ground with a thud.",
+          behavior: "Defensive"
+        },
+        {
+          name: "Red Orc",
+          maxHP: 50,
+          type: "Orc",
+          defense: 5,
+          attack: 15,
+          drops: [
+            { name: "Small Green Potion", chance: 5 },
+            { name: "Apple", chance: 3 },
+            { name: "Rusty Dagger", chance: 2 }
+          ],
+          xpReward: 50,
+          deathMessage: "The orc falls to the ground with a thud.",
+          behavior: "Aggressive"
         }
         
       ],
@@ -406,7 +433,7 @@ getDrop(enemy) {
         {name: "Mystic Dagger",   description: "blah" , rarity: "mythic", category: "melee offensive weapon" },
         {name: "Apple",   description: "blah", rarity: "common", category: "consumable"  },
         {name: "Slingshot",   description: "A stater weapon" , rarity: "uncommon", category: "ranged offensive weapon"  },
-        {name: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  },
+        {name: "Water",   description: "Heals a small amount", rarity: "common", category: "consumable"  }, 
       ],
       storyText: {
         intro: "Begin",
@@ -417,7 +444,7 @@ getDrop(enemy) {
     }
     
     function homeMode(){
-      toolBox.updateTool.updateSceneImage("images/home.png");
+      toolBox.updateTool.updateSceneImage("images/Home.jpg");
       locationTitle.innerText = "Currently: Home";
       storyBox.innerHTML = `You find yourself back at Home...<br>`;
       modeOutput.innerHTML = `
@@ -499,6 +526,10 @@ getDrop(enemy) {
       <button id="returnExplore">Return</button>
       <button id="stayField">Stay</button>
       `;
+      const returnExplore = $('#returnExplore');
+      returnExplore.addEventListener('click', () => {
+        changeMode("Explore");
+      });
       const stayField = $('#stayField');
       stayField.addEventListener('click', () => {
         changeMode("Alert");
@@ -521,10 +552,22 @@ getDrop(enemy) {
     }
 
     function ratEncounter(){
-      toolBox.updateTool.updateSceneImage("images/Rat.png");
+      toolBox.updateTool.updateSceneImage("./images/Rat.png");
       toolBox.updateTool.storyNew(`A rat has scurried up to you and it seems aggresive. ready to fight?`)
-      
     };
+    modeOutput.innerHTML = `
+    <button id="fightRat">Fight</button>
+    <button id="runRat">Run</button>
+    `;
+    console.log("Rat Encounter Triggered");
+    const fightRat = $('#fightRat');
+    const runRat = $('#runRat');
+    fightRat.addEventListener('click', () => {
+      gameState.currentEnemy = toolBox.enemyTool.createInstance(gameData.enemyArr[1]);
+      toolBox.updateTool.storyNew(`You engage the rat in combat!`);
+      toolBox.updateTool.storyAppend(`<br>Rat HP: ${gameState.currentEnemy.hp}`);
+      
+    })
  
     function forestMode(){
       toolBox.updateTool.updateSceneImage("images/forest.jpg");
@@ -556,7 +599,7 @@ getDrop(enemy) {
   
 
     function villageMode(){
-      toolBox.updateTool.updateSceneImage("images/village.png");
+      toolBox.updateTool.updateSceneImage("./images/Village.jpg");
       storyBox.innerHTML = 'You stand in the townsquare...';
       locationTitle.innerText = 'Currently: Village';
       modeOutput.innerHTML = `
