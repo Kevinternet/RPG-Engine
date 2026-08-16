@@ -117,20 +117,20 @@ hitRat(){
 
     return;
   }
-
-  gameState.currentEnemy.currentHP = 0;
-  toolBox.updateTool.storyNew(
-    `You defeated the rat and gained xp!`
-  );
+  if (gameState.currentEnemy.currentHP <= 0){
+    gameState.currentEnemy.currentHP = 0;
+    toolBox.updateTool.storyNew(
+      `You defeated the rat and gained xp!`
+    );
 
   toolBox.playerTool.gainXP(gameState.currentEnemy.xpReward);
   toolBox.playerTool.gainGold(gameState.currentEnemy.goldReward);
-  reward = toolBox.lootTool.getDrop(gameState.currentEnemy);
-  toolBox.updateTool.addToInventory(reward.name, 1, reward.number);
+  let reward = toolBox.lootTool.getDrop(gameState.currentEnemy);
+  toolBox.inventoryTool.addToInventory(reward.name, 1, reward.number);
   gameState.world.ratFought = true;
   setTimeout(() => {
     changeMode("Field");
-  }, 4500);
+  }, 4500);}
 
 }
 
@@ -183,9 +183,6 @@ hitRat(){
     return {poisonDmg, curePoisoning}
 
    },
-
-
-
   },
 
   playerTool: {
@@ -212,6 +209,62 @@ hitRat(){
     toolBox.updateTool.playerStatUpdate();
   },
 },
+
+inventoryTool: {
+
+
+  useItem(name) {
+    for (const x of gameState.player.inventory) {
+      if (x.name === name) {
+        x.quantity--;
+        toolBox.updateTool.storyAppend(`Used one: ${x.name}`);
+        if (x.quantity === 0) {
+          const index = gameState.player.inventory.indexOf(x);
+          gameState.player.inventory.splice(index, 1);
+        }
+        toolBox.updateTool.playerInventoryUpdate();
+        return;
+      }
+    }
+    toolBox.updateTool.storyAppend("item not found");
+  },
+
+  findItem(name) {
+    for (let i = 0; i < gameState.player.inventory.length; i++) {
+      let item = gameState.player.inventory[i];
+      if (item.name === name) {
+        return {
+          item: item.name,
+          item: item.quantity,
+          index: i
+        };
+      }
+    }
+    return null;
+  },
+
+  addToInventory(item, amount, itemNumber){
+    let found = false;
+
+  for (const items of gameState.player.inventory){
+    console.log("Checking:", items.name, items.item);
+    if (items.name === item){
+      items.quantity = items.quantity + amount;
+      found = true;
+      break;
+    }
+  }
+  
+  if (found === false){
+    let specificItem = gameData.itemList[itemNumber];
+    let clone = {...specificItem, quantity: amount};
+    gameState.player.inventory.push(clone);
+  }
+
+    toolBox.updateTool.playerInventoryUpdate();
+  }
+},
+
   
   enemyTool: {
 
@@ -231,39 +284,6 @@ hitRat(){
 
   updateTool: {
 
-useItem(itemName){
-  const item = gameState.player.inventory.find(i => i.name === itemName);
-  if (item && item.quantity > 0) {
-    item.quantity--;
-    if (item.quantity === 0) {
-      gameState.player.inventory = gameState.player.inventory.filter(i => i.name !== itemName);
-    }
-  }
-},
-
-addToInventory(item, amount, itemNumber){
-
-  let found = false
-
-  for (const items of gameState.player.inventory){
-    console.log("Checking:", items.name, items.item);
-    if (items.name === item){
-      items.quantity = items.quantity + amount;
-      found = true;
-      break;
-    }
-  }
-  
-  if (found === false){
-    let specificItem = gameData.itemList[itemNumber];
-    let clone = {...specificItem, quantity: amount};
-    gameState.player.inventory.push(clone);
-  }
-
-  toolBox.updateTool.playerInventoryUpdate();
-
-  
-},
 
 updateSceneImage(path) {
   const img = document.getElementById("sceneImage");
@@ -285,7 +305,7 @@ playerStatUpdate(){
     playerInventoryUpdate(){
       let inventoryEntries = ''
       gameState.player.inventory.forEach(item => {
-      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity} <button onclick="toolBox.updateTool.useItem('${item.name}')">Use</button><br>` //this line may need updated least sure how to build this myself
+      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity} <button onclick="toolBox.inventoryTool.useItem('${item.name}')">Use</button><br>` //this line may need updated least sure how to build this myself
       })      
     inventoryOutput.innerHTML = inventoryEntries
     },
@@ -324,8 +344,6 @@ playerStatUpdate(){
     punch(){
       return toolBox.combat.damageRoller(5, "small");
     }
-    
-
 
   },
 
@@ -672,7 +690,7 @@ getDrop(enemy) {
       shakeTree.addEventListener('click', () => {
          if (gameState.world.treeShaken === false) {
         toolBox.updateTool.storyAppend(`You shake the tree and 3 apples fall from it.<br> You pick them up.<br>`)
-        toolBox.updateTool.addToInventory("Apple", 3, 10);
+        toolBox.inventoryTool.addToInventory("Apple", 3, 10);
         gameState.world.treeShaken = true;
       }
 
@@ -785,7 +803,7 @@ function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Field");
+changeMode("Forest");
 
 </script>
 
