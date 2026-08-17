@@ -128,6 +128,7 @@ hitRat(){
   let reward = toolBox.lootTool.getDrop(gameState.currentEnemy);
   toolBox.inventoryTool.addToInventory(reward.name, 1, reward.number);
   gameState.world.ratFought = true;
+toolBox.updateTool.updateSceneImage("./images/DefeatedRat.png");
   setTimeout(() => {
     changeMode("Field");
   }, 4500);}
@@ -192,7 +193,7 @@ hitRat(){
     gameState.player.level++;
     gameState.player.maxXP = Math.floor(gameState.player.maxXP * 1.75);
     toolBox.updateTool.playerStatUpdate();
-    toolBox.updateTool.storyAppend("<br>You Leveled Up!");
+    toolBox.updateTool.storyAppend(`You Leveled Up!<br> You are now level ${gameState.player.level}.<br>`);
   },
 
   gainXP(amount){
@@ -212,21 +213,21 @@ hitRat(){
 
 inventoryTool: {
 
-
-  useItem(name) {
-    for (const x of gameState.player.inventory) {
-      if (x.name === name) {
-        x.quantity--;
-        toolBox.updateTool.storyAppend(`Used one: ${x.name}`);
-        if (x.quantity === 0) {
-          const index = gameState.player.inventory.indexOf(x);
-          gameState.player.inventory.splice(index, 1);
-        }
-        toolBox.updateTool.playerInventoryUpdate();
-        return;
-      }
+  useItem(name){
+    let result = toolBox.inventoryTool.findItem(name);
+    if (result === null) {
+      toolBox.updateTool.storyAppend("item not found");
+      return;
     }
-    toolBox.updateTool.storyAppend("item not found");
+    else {
+      result.item.quantity--;
+      toolBox.updateTool.storyAppend(`Used one: ${result.item.name}<br>`);
+      if (result.item.quantity === 0) {
+        let index = result.index;
+        gameState.player.inventory.splice(index, 1);
+    }
+  }
+  toolBox.updateTool.playerInventoryUpdate();
   },
 
   findItem(name) {
@@ -234,8 +235,7 @@ inventoryTool: {
       let item = gameState.player.inventory[i];
       if (item.name === name) {
         return {
-          item: item.name,
-          item: item.quantity,
+           item: item,
           index: i
         };
       }
@@ -263,7 +263,7 @@ inventoryTool: {
 
     toolBox.updateTool.playerInventoryUpdate();
   }
-},
+}, 
 
   
   enemyTool: {
@@ -305,10 +305,12 @@ playerStatUpdate(){
     playerInventoryUpdate(){
       let inventoryEntries = ''
       gameState.player.inventory.forEach(item => {
-      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity} <button onclick="toolBox.inventoryTool.useItem('${item.name}')">Use</button><br>` //this line may need updated least sure how to build this myself
+      inventoryEntries += `<br>${item.name} — Quantity: ${item.quantity} <button onclick="toolBox.inventoryTool.useItem('${item.name}')">Use</button><br>`
       })      
     inventoryOutput.innerHTML = inventoryEntries
-    },
+    if (gameState.player.inventory.length === 0) {
+      inventoryOutput.innerHTML = "Inventory is empty.";
+    }},
 
     storyAppend(message){
       storyBox.innerHTML += message;
@@ -320,6 +322,30 @@ playerStatUpdate(){
   },
 
   combat: {
+
+
+    combatRouter(action, payload){
+      switch(action){
+        case "attack":
+          toolBox.combatTool.attack(payload);
+          break;
+        case "defend":
+          toolBox.combatTool.defend();
+          break;
+        case "useItemInCombat":
+          toolBox.combatTool.useItemInCombat(payload);
+          break;
+        case "flee":
+          toolBox.combatTool.fleeAttempt();
+          break;
+        default:
+          console.log("Unknown action:", action);
+      }
+    },
+
+    useItemInCombat(itemName){
+      toolBox.inventoryTool.useItem(itemName);
+    },
 
     damageRoller(baseDamage, size){
       let amount = baseDamage;
@@ -592,10 +618,10 @@ getDrop(enemy) {
     }
 
     function fieldMode(){
-      toolBox.updateTool.updateSceneImage("images/Field.jpg");
-      toolBox.updateTool.storyNew(`You walk into the nearby field.`);
+      toolBox.updateTool.updateSceneImage("./images/Field.jpg");
       if (gameState.world.ratFought === false){
       locationTitle.innerText = "Location: Field"
+      toolBox.updateTool.storyNew(`You walk into the nearby field.<br>`);
       modeOutput.innerHTML = `
       <button id="returnExplore">Return</button>
       <button id="stayField">Stay</button>
@@ -616,6 +642,7 @@ getDrop(enemy) {
       }
       if (gameState.world.ratFought === true) {
         locationTitle.innerText = "Location: Field"
+        toolBox.updateTool.storyNew(`You walk into the field where you fought the rat.<br>`);
         modeOutput.innerHTML = `
         <button id="returnExplore">Return</button>
         <button id="stayField">Stay</button>
