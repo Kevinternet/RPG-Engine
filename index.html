@@ -693,14 +693,14 @@ function wheelMode() {
 
 
   if(gameState.mode === "Wheel"){
-    toolBox.updateTool.updateSceneImage('');
-    const wheelWrapper = document.createElement('div')
-    wheelWrapper.id = "wheelWrap"
-    const wheelImg = document.createElement('img')
-    wheelImg.id = "wheelImage"
-    wheelImg.src = "images/Wheel.png"
-    const pointerImg = document.createElement('img')
-    pointerImg.id = "wheelPointer"
+    toolBox.updateTool.updateSceneImage("images/Empty.png");
+    const wheelWrapper = document.createElement('div');
+    wheelWrapper.id = "wheelWrap";
+    const wheelImg = document.createElement('img');
+    wheelImg.id = "wheelImage";
+    wheelImg.src = "images/Wheel.png";
+    const pointerImg = document.createElement('img');
+    pointerImg.id = "wheelPointer";
     pointerImg.src = "images/Pointer.png"
     document.querySelector('#story-wrapper').appendChild(wheelWrapper);
     wheelWrapper.appendChild(wheelImg);
@@ -711,35 +711,24 @@ function wheelMode() {
 
   // make the wheel clickable
   const wheel = document.getElementById('wheelImage');
-  wheel.onclick = () => {
-    
-    setTimeout(() => {
-        wheelImg.classList.add('spin');
-      toolBox.minigameTool.spinWheel();
-      
-      wheelImg.style.setProperty('--final-angle', gameState.wheelSpinAngle + 'deg');
+  wheel.addEventListener('click', () => {
+    if (!gameState.world.wheelSpinable) return;
 
-      gameState.world.wheelSpinable = false;
+    toolBox.minigameTool.spinWheel();
 
-     
-    
+    let currentAngle = 0;
+    if (wheelImg.dataset.angle) {
+      currentAngle = Number(wheelImg.dataset.angle);
+    }
 
-    }, 50)
+    let totalRotation = currentAngle + gameState.wheelSpinAngle;
+    wheelImg.dataset.angle = totalRotation;
+    wheelImg.style.transform = 'rotate(' + totalRotation + 'deg)';
 
-
-setTimeout(() => {
-
-  wheelImg.addEventListener('animationend', () => {
+    setTimeout(function () {
       gameState.world.wheelSpinable = true;
-    });
-     
-
-
-}, 3000);
-  
-
-  
-  };
+    }, 5000);
+  });
 
   modeOutput.innerHTML = `
   <button id="exitWheel">Return</button>
@@ -994,7 +983,7 @@ function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Wheel");
+changeMode("Shop");
 
 </script>
 
