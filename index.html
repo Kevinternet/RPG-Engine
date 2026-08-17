@@ -139,6 +139,46 @@ toolBox.updateTool.updateSceneImage("./images/DefeatedRat.png");
 
   },
 
+  minigameTool: {
+
+    spinWheel (){
+
+      if (gameState.world.wheelSpinable === true){
+      
+
+      const segements = gameData.rpgWheel.segments;
+
+      let index = toolBox.randomTool.chooseRandom(segements);
+      let result = segements[index];
+
+      let slice = 360 / segements.length;
+
+      let finalAngle = (360 * 5) + (slice * index) + 18;
+
+      gameState.wheelSpinAngle = finalAngle;
+      
+      gameState.wheelSpinResult = result;
+
+      return result;
+      }
+
+      else
+      {return}
+
+    },
+
+    resetWheel(){
+
+      gameState.wheelSpinAngle = 0;
+      
+      gameState.wheelSpinResult = 0;
+
+    }
+
+
+
+  },
+
   randomTool: {
 
     rollNumber(number){
@@ -290,11 +330,17 @@ updateSceneImage(path) {
   img.src = path;
 },
 
+updateSceneImageTwo(path){
+const img = document.getElementById("sceneImageTwo");
+img.src = path;
+},
+
 playerStatUpdate(){
   playerOutput.innerHTML = `
     Name: ${gameState.player.name}<br>
     Level: ${gameState.player.level}<br>
-    weapon: ${gameState.player.weapon}<br>
+    Weapon: ${gameState.player.weapon}<br>
+    Armor: ${gameState.player.armor}<br>
     XP: ${gameState.player.xp}/${gameState.player.maxXP}<br>
     Health: ${gameState.player.health}<br>
     Gold: ${gameState.player.gold}g
@@ -319,6 +365,28 @@ playerStatUpdate(){
     storyNew(message){
       storyBox.innerHTML = message;
     },
+  },
+
+  abilityTool: {
+
+
+    learnAbility(spam){
+      for (const move of gameData.potentialAbilities){
+      if (spam === move.ability){
+        let clone = {...move};
+        gameState.player.abilities.push(clone);
+        toolBox.updateTool.storyAppend(`You learned: $(clone.ability)<br>`);
+        return;
+      }
+    }
+    console.log('error');
+    }
+
+
+
+
+
+
   },
 
   combat: {
@@ -427,6 +495,7 @@ getDrop(enemy) {
         attack: 0,
         xp: 0,
         maxXP: 50,
+        armor: "nothing",
         weapon: "nothing",
         activeCombat: false,
         playerTurn: true,
@@ -434,12 +503,11 @@ getDrop(enemy) {
         playerDeath: false,
         inventory: [],
         class: null,
-        abilities: [
-          { ability: "Spark", description: "Do 5 damage.", manaCost: 10, cooldown: 10 }
-        ]
+        abilities: [],
       },
 
       world: {
+      wheelSpinable: false,
 
       crateBroken: false,
 
@@ -533,13 +601,38 @@ getDrop(enemy) {
         {name: "Apple",   description: "a red, juicy apple" , rarity: "common", category: "consumable", index: 10, effect: "heal", value: 10 },
         {name: "Slingshot",   description: "A simple slingshot" , rarity: "uncommon", category: "weapon", index: 11, effect: "damage", value: 5 },
         {name: "Water",   description: "A bottle of clean water" , rarity: "common", category: "consumable", index: 12, effect: "heal", value: 5  }, 
-        {name: "breastplate",   description: "A sturdy breastplate" , rarity: "rare", category: "armor", index: 13, effect: "defense", value: 5},
+        {name: "Breastplate",   description: "A sturdy breastplate" , rarity: "rare", category: "armor", index: 13, effect: "defense", value: 5},
+        {name: "Ruby", description:"A rare red gemstone", rarity: "rare", category: "treasure", index: 14, effect: "sell", value: 125},
+        {name: "Sapphire", description: "a rare blue gemstone", rarity: "rare", category: "treasure", index: 15, effect: "sell", value: 175}
       ],
+      potentialAbilities: [
+          { ability: "Spark", description: "Do 10 damage.", manaCost: 10, uses: 0, maxUses: 1, minLevel: 1 },
+          { ability: "Heal", description: "Restore 15 health.", manaCost: 15, uses: 0, maxUses: 2, minLevel: 1 },
+          { ability: "Fireball", description: "Do 20 damage.", manaCost: 20, uses: 0, maxUses: 1, minLevel: 3 },
+          { ability: "Ice Shard", description: "Do 15 damage", manaCost: 15, uses: 0, maxUses: 2, minLevel: 3 },
+          { ability: "Lightning Strike", description: "Do 25 damage.", manaCost: 25, uses: 0, maxUses: 1, minLevel: 5}
+        ],
       storyText: {
         intro: "Begin",
         Battle: ["A Fight Has Started...", "You Exchange Blows", "You Took damage", "You Dealt Damage", "You won the battle", "You Fainted.", "You Found Some Items", "You lost some items"],
         end: "The End."
       },
+
+      rpgWheel: {
+        segments: [
+          { label: 'aquired item', type: 'loot', item: 'Slingshot'},
+          { label: 'restored health', type: 'heal', value: 25},
+          { label: 'treasure found', type: 'loot', item: 'Ruby' },
+          { label: 'treasure found', type: 'loot', item: 'Sapphire'},
+          { label: 'enemy encountered', type: 'enemy', enemy: 'Purple Orc'},
+          { label: 'ability aquired', type: 'ability', ability: 'Spark'},
+          { label: 'ability aquired', type: 'ability', ability: 'Heal'},
+          { label: 'you have taken damage', type: 'damage', amount: 30},
+          { label: 'gain gold', type:"gold", amount: 50},
+          { label: 'gain xp', type:"XP", amount: 25}
+        ]
+      }
+
       
     }
     
@@ -568,7 +661,7 @@ getDrop(enemy) {
     }
 
     function shopMode(){
-      toolBox.updateTool.updateSceneImage("images/shop.png");
+      toolBox.updateTool.updateSceneImage("images/Shop.png");
       toolBox.updateTool.storyAppend("You walk into the local shop.");
       locationTitle.innerText = "Currently: Shop";
       modeOutput.innerHTML = `
@@ -580,18 +673,88 @@ getDrop(enemy) {
       
       exitBtn.addEventListener('click', () => {changeMode("Village");})
       talkBtn.addEventListener('click', () => {
-        toolBox.updateTool.storyNew("<br>Shop Keep: Free XP today. The Dev has reasons, get it while it lasts...");
+        toolBox.updateTool.storyNew("Spin the wheel for a surprise...");
         talkBtn.remove();
         const btn = document.createElement('button');
-        btn.id = "freeBtn";
-        btn.innerText = "Free Xp";
+        btn.id = "wheelBtn";
+        btn.innerText = "Play Spin Wheel";
         modeOutput.appendChild(btn);
-        const freeBtn = $('#freeBtn');
-        freeBtn.addEventListener('click', () => {
-          toolBox.playerTool.gainXP(4);
+        const wheelBtn = $('#wheelBtn');
+        wheelBtn.addEventListener('click', () => {
+          wheelMode();
         })
       })
     }
+
+function wheelMode() {
+
+  gameState.mode = "Wheel";
+  gameState.world.wheelSpinable = true;
+
+
+  if(gameState.mode === "Wheel"){
+    toolBox.updateTool.updateSceneImage('');
+    const wheelWrapper = document.createElement('div')
+    wheelWrapper.id = "wheelWrap"
+    const wheelImg = document.createElement('img')
+    wheelImg.id = "wheelImage"
+    wheelImg.src = "images/Wheel.png"
+    const pointerImg = document.createElement('img')
+    pointerImg.id = "wheelPointer"
+    pointerImg.src = "images/Pointer.png"
+    document.querySelector('#story-wrapper').appendChild(wheelWrapper);
+    wheelWrapper.appendChild(wheelImg);
+    wheelWrapper.appendChild(pointerImg);
+ 
+  // clear interactive zone (for now)
+  toolBox.updateTool.storyNew("Click the wheel to spin.");
+
+  // make the wheel clickable
+  const wheel = document.getElementById('wheelImage');
+  wheel.onclick = () => {
+    
+    setTimeout(() => {
+        wheelImg.classList.add('spin');
+      toolBox.minigameTool.spinWheel();
+      
+      wheelImg.style.setProperty('--final-angle', gameState.wheelSpinAngle + 'deg');
+
+      gameState.world.wheelSpinable = false;
+
+     
+    
+
+    }, 50)
+
+
+setTimeout(() => {
+
+  wheelImg.addEventListener('animationend', () => {
+      gameState.world.wheelSpinable = true;
+    });
+     
+
+
+}, 3000);
+  
+
+  
+  };
+
+  modeOutput.innerHTML = `
+  <button id="exitWheel">Return</button>
+  `;
+  const exitWheel = document.querySelector('#exitWheel');
+  exitWheel.addEventListener('click', () => {
+    clearUI();
+    wheelImg.remove();
+    pointerImg.remove();
+    gameState.world.wheelSpinable = false;
+    shopMode();
+  })
+}
+}
+
 
     function exploreMode(){
       toolBox.updateTool.updateSceneImage("images/explore.jpg");
@@ -618,7 +781,7 @@ getDrop(enemy) {
     }
 
     function fieldMode(){
-      toolBox.updateTool.updateSceneImage("./images/Field.jpg");
+      toolBox.updateTool.updateSceneImage("images/Field.jpg");
       if (gameState.world.ratFought === false){
       locationTitle.innerText = "Location: Field"
       toolBox.updateTool.storyNew(`You walk into the nearby field.<br>`);
@@ -824,13 +987,14 @@ getDrop(enemy) {
   if (mode === "Forest") forestMode();
   if (mode === "Field") fieldMode();
   if (mode === "Alert") alertMode();
+  if (mode === "Wheel") wheelMode();
 }
 
 function clearUI(){
   storyBox.innerText = '';
 }
 
-changeMode("Forest");
+changeMode("Wheel");
 
 </script>
 

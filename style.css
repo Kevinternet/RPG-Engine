@@ -37,19 +37,79 @@ button:hover {
 
 #story-wrapper {
   display: flex;
+  justify-content: center;
+  z-index: 0;
   gap: 20px;
   align-items: flex-start;
+  position: relative;
 }
 
 #sceneImage {
+  rotate: 0;
+  transform: translateX(-325px);
   width: 300px;       /* adjust as needed */
   height: 300px;      /* or auto */
   object-fit: cover;  /* keeps your art looking good */
-  border: 1px solid #0f0;
+  transition: none;
+  position: absolute;
+
 }
 
 #storyBox {
+  position: absolute;
+  transform: translateX(75px);
   width: 50%;
   min-height: 280px;
 
+}
+
+#wheelPointer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateX(130px);
+  width: 40px;   /* or whatever looks good */
+  z-index: 2;
+  pointer-events: none;
+}
+
+
+
+#wheelImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateX(-345px);
+  transform: translateY(0px);
+  width: 300px;
+  height: 300px;
+  z-index: 1;
+}
+
+
+#wheelImage {
+  transition: transform 3s ease-out;
+
+}
+
+#wheelWrap {
+  position: relative;
+  transform: translateX(-325px);
+  width: 300px;
+  height: 300px;
+}
+
+.spin {
+  animation: wheelSpin 5s cubic-bezier(0.15, 0.85, 0.35, 1) normal forwards;
+}
+
+
+
+@keyframes wheelSpin {
+  from {
+    transform: translate( 0, 0) rotate(0Deg);
+  }
+  to {
+    transform: translate( 0, 0) rotate(var(--final-angle));
+  }
 }
